@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#1467e8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <title>实时面试回答助手</title>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>实时面试回答助手</h1>
+      <p>环境声音识别 → 简历匹配 → 文字回答</p>
+    </div>
+    <button id="settingsBtn" class="ghost">设置</button>
+  </header>
+
+  <main>
+    <section class="status-card">
+      <div class="status-line">
+        <span id="lamp" class="lamp"></span>
+        <strong id="statusText">尚未开始监听</strong>
+      </div>
+      <div class="meter"><div id="meterFill"></div></div>
+      <div class="controls">
+        <button id="startBtn" class="primary">开始监听环境声音</button>
+        <button id="stopBtn" class="danger" disabled>停止</button>
+        <button id="testBtn" class="secondary">手动输入问题</button>
+      </div>
+      <p class="small">老师说完并安静约 1.2 秒后，自动识别问题并生成回答。</p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <h2>识别到的问题</h2>
+        <button id="clearBtn" class="text-btn">清空</button>
+      </div>
+      <textarea id="question" placeholder="识别结果会出现在这里，也可以手动修改。"></textarea>
+      <div class="inline-actions">
+        <button id="answerBtn" class="primary">根据当前问题生成回答</button>
+      </div>
+    </section>
+
+    <section class="panel answer-panel">
+      <div class="panel-title">
+        <h2>建议回答</h2>
+        <button id="copyBtn" class="text-btn">复制</button>
+      </div>
+      <div id="keywords" class="keywords">关键词提示会显示在这里</div>
+      <div id="answer" class="answer">请先开始监听。</div>
+      <div class="inline-actions">
+        <button id="shortBtn" class="secondary">压缩成 30 秒回答</button>
+        <button id="detailBtn" class="secondary">补充技术细节</button>
+      </div>
+    </section>
+
+    <section class="notice">
+      不播放声音，只显示文字。默认不保存录音；每段录音在完成识别后从页面内存中释放。
+    </section>
+  </main>
+
+  <dialog id="settingsDialog">
+    <form method="dialog">
+      <h2>连接与识别设置</h2>
+      <label>OpenAI API Key（只保存在本次页面内存中）</label>
+      <input id="apiKey" type="password" autocomplete="off" placeholder="sk-...">
+      <label>回答模型</label>
+      <input id="answerModel" value="gpt-5-mini">
+      <label>语音识别模型</label>
+      <input id="sttModel" value="gpt-4o-mini-transcribe">
+      <label>声音触发灵敏度 <span id="thresholdValue">0.035</span></label>
+      <input id="threshold" type="range" min="0.010" max="0.100" step="0.005" value="0.035">
+      <label>判定说完的静音时间（毫秒）</label>
+      <input id="silenceMs" type="number" value="1200" min="700" max="3000" step="100">
+      <p class="warning">直接在网页中输入API Key仅适合个人临时测试。不要把Key截图、转发或写入源码。</p>
+      <div class="dialog-actions">
+        <button value="cancel" class="secondary">关闭</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script id="resumeData" type="application/json">"李立娟，求职方向为数字芯片设计、FPGA设计、SoC前端设计和数字芯片验证。\n\n教育背景：\n2018.09—2022.07，中国矿业大学，光电信息科学与工程，本科。\n2022.09—至今，中国科学院大学，集成电路设计与制造。\n\n工程与专业能力：\n具备需求分析、RTL设计与集成、功能仿真、Lint检查、SDC约束、DC综合、网表接入、SDF后仿、PTPX功耗分析以及DRC/LVS/Tape-Out检查经验。\n熟悉Verilog、SystemVerilog、AXI/APB、ready/valid握手、时钟复位、接口时序、寄存器配置；使用过VCS/Xrun、Verdi、SpyGlass、Design Compiler、PrimeTime和PTPX。\n\n实习经历：\n2026.5—至今，北京大学信息技术高等研究院—杭州微纳核芯电子科技，数字IC设计实习生。\n参与AI存算一体SoC前端设计与集成。系统包含RISC-V控制、NoC互联、8个NPU Bank并行计算和近存DRAM访问。\n1. bank_controller：位于MC后端，完成bank选择、地址生成、ACT控制、读写调度、写数据组织和读返回管理；支持RMW部分写和PIM访问。\n2. mc2axi：把MC侧多bank访存接口转换为AXI4 Master五通道事务；使用命令整理、仲裁、异步FIFO跨时钟域；支持full-bank/half-bank地址映射、普通读写、部分写和PIM访问。\n3. apb2srtop：将外部APB访问转换为srtop自定义SR接口；包含APB寄存器接口、命令缓存、1深度pending队列、CDC握手和SR域状态机；控制write setup、enable、hold、read delay、cooldown；支持busy/done/error等状态。\n\n科研项目一：\n高性能近存存储与类脑智算芯片设计。系统为Encoder + 8×8时分复用SNN阵列 + 80×8并行近存存储器。\n设计16-bit超导比特流动态循环存储器，存储单元首尾相连形成闭合环路；实现最高50 GHz连续稳定读出，密度较传统阵列结构提升约5倍。\n设计一维时钟寻址模块，基于全局时钟、模N计数器和NDRO门控，实现首位对齐和连续按序读出。\n围绕参数、环路路径、版图布局布线和并行I/O优化，研究密度和带宽扩展。\n相关成果：专利“超导存储电路及超导存储系统”CN202410859407.3；相关SCI论文在投。\n\n科研项目二：\n面向AI矩阵计算的简化GPGPU并行架构。包含Host配置、CTA Scheduler/Dispatcher、4个Compute Core、Cache、程序/数据存储控制器和Global Memory。\n通过thread_count、core_id、block_id、thread_id分发任务，支持8-thread矩阵加法与矩阵乘法验证。\n计算核心使用16-bit指令格式：4-bit opcode、4-bit寄存器索引、8-bit immediate；支持NOP、BRnzp、CMP、ADD、SUB、MUL、DIV、LDR、STR、CONST、RET。\n核心包含PC、Fetcher、Decoder、Register File、ALU/Multiplier、LSU和控制状态机，实现取指、译码、执行、访存和写回。"</script>
+  <script src="app.js"></script>
+</body>
+</html>
