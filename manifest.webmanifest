@@ -1,10 +1,12 @@
 {
-  "name": "免费本地面试回答助手",
-  "short_name": "本地面试助手",
+  "name": "离线自动面试助手",
+  "short_name": "离线面试助手",
+  "description": "使用Vosk WebAssembly在平板本地自动收听环境声音并匹配简历回答。",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#eef3fa",
-  "theme_color": "#1467e8",
+  "background_color": "#edf3fa",
+  "theme_color": "#1266e3",
+  "orientation": "any",
   "icons": [
     {
       "src": "icons/icon-192.png",
