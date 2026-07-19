@@ -20,6 +20,9 @@ let loading = false;
 let finalParts = [];
 let answerTimer = null;
 let modelTimer = null;
+let audioChunkCount = 0;
+let recognizerOutputSeen = false;
+let recognizerWatchdog = null;
 
 function setStatus(text, mode = "") {
   $("status").textContent = text;
@@ -163,12 +166,20 @@ async function requestWakeLock() {
   }
 }
 
-function buildRecognizer() {
-  recognizer = new model.KaldiRecognizer();
+function buildRecognizer(sampleRate) {
+  if (!Number.isFinite(sampleRate) || sampleRate <= 0) {
+    throw new Error("无法取得有效的麦克风采样率：" + sampleRate);
+  }
+
+  // vosk-browser 0.0.8 requires the recognizer sample rate.
+  // Omitting it creates an unusable recognizer that receives audio but emits no text.
+  recognizer = new model.KaldiRecognizer(sampleRate);
+  recognizerOutputSeen = false;
 
   recognizer.on("partialresult", (message) => {
     const partial = (message?.result?.partial || "").trim();
     if (partial) {
+      recognizerOutputSeen = true;
       $("partial").textContent = "实时识别：" + partial;
       setStatus("正在识别老师说话", "on");
     }
@@ -177,11 +188,19 @@ function buildRecognizer() {
   recognizer.on("result", (message) => {
     const text = (message?.result?.text || "").trim();
     if (text) {
+      recognizerOutputSeen = true;
       finalParts.push(text);
       $("partial").textContent = "已识别片段：" + finalParts.join("，");
       setStatus("检测到停顿，等待问题是否继续", "busy");
       scheduleFinalAnswer();
     }
+  });
+
+  recognizer.on("error", (message) => {
+    const detail = message?.error || "未知识别器错误";
+    console.error("Vosk recognizer error", message);
+    $("partial").textContent = "本地识别器错误：" + detail;
+    setStatus("本地识别器启动失败", "error");
   });
 }
 
@@ -221,13 +240,14 @@ async function startListening() {
         echoCancellation: true,
         noiseSuppression: true,
         autoGainControl: true,
-        channelCount: 1
+        channelCount: 1,
+        sampleRate: 16000
       }
     });
 
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     await audioContext.resume();
-    buildRecognizer();
+    buildRecognizer(audioContext.sampleRate);
 
     sourceNode = audioContext.createMediaStreamSource(stream);
     analyser = audioContext.createAnalyser();
@@ -238,13 +258,17 @@ async function startListening() {
     silentGain = audioContext.createGain();
     silentGain.gain.value = 0;
 
+    audioChunkCount = 0;
     processorNode.onaudioprocess = (event) => {
       if (!listening || !recognizer) return;
       try {
+        audioChunkCount += 1;
         recognizer.acceptWaveform(event.inputBuffer);
         event.outputBuffer.getChannelData(0).fill(0);
       } catch (error) {
         console.error("acceptWaveform failed", error);
+        $("partial").textContent = "音频送入识别器失败：" + (error?.message || String(error));
+        setStatus("识别器处理音频失败", "error");
       }
     };
 
@@ -256,9 +280,20 @@ async function startListening() {
     listening = true;
     $("start").disabled = true;
     $("stop").disabled = false;
-    $("partial").textContent = "等待老师说话……";
+    $("partial").textContent = `识别器已创建，实际采样率 ${audioContext.sampleRate} Hz。请说一句完整普通话。`;
     $("levelText").textContent = "麦克风已打开";
-    setStatus("正在持续监听环境声音", "on");
+    setStatus(`正在持续监听（${audioContext.sampleRate} Hz）`, "on");
+
+    clearInterval(recognizerWatchdog);
+    recognizerWatchdog = setInterval(() => {
+      if (!listening || recognizerOutputSeen) return;
+      if (audioChunkCount > 0) {
+        $("partial").textContent =
+          `麦克风音频已持续送入识别器（${audioChunkCount} 个音频块，${audioContext.sampleRate} Hz），` +
+          "但尚未识别出文字。请靠近平板，用普通话连续说3到5秒，再安静2秒。";
+      }
+    }, 3000);
+
     await requestWakeLock();
     updateMeter();
   } catch (error) {
@@ -272,6 +307,10 @@ async function startListening() {
 async function stopListening() {
   listening = false;
   clearTimeout(answerTimer);
+  clearInterval(recognizerWatchdog);
+  recognizerWatchdog = null;
+  audioChunkCount = 0;
+  recognizerOutputSeen = false;
   finalParts = [];
 
   if (meterFrame) cancelAnimationFrame(meterFrame);

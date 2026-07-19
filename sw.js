@@ -1,5 +1,5 @@
 
-const CACHE = "matepad-vosk-interview-v5";
+const CACHE = "matepad-vosk-interview-v6-samplerate-fix";
 const LOCAL = ["./","index.html","styles.css","app.js","manifest.webmanifest","icons/icon-192.png","icons/icon-512.png"];
 self.addEventListener("install", event => {
   self.skipWaiting();
