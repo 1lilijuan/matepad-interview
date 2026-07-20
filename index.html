@@ -8,102 +8,33 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="styles-v9.css?v=9.0.0">
+<link rel="stylesheet" href="styles-v10.css?v=10.0.0">
 <link rel="icon" href="icons/icon-192.png">
-<title>中文面试术语增强助手</title>
-<script src="https://cdn.jsdelivr.net/npm/vosk-browser@0.0.8/dist/vosk.js"></script>
+<title>Whisper高精度面试助手</title>
 </head>
 <body>
-<header>
-  <div>
-    <h1>中文面试术语增强助手</h1>
-    <p>中文主识别 → 英文专业术语纠错 → 语义匹配 → 停顿后自动回答</p>
-  </div>
-  <span class="badge">无需 API Key · V9</span>
-</header>
-
+<header><div><h1>Whisper高精度面试助手</h1><p>自适应收音 → Whisper多语言转写 → 术语规范化 → 自动回答</p></div><span class="badge">无需 API Key · V10</span></header>
 <main>
 <section class="card">
-  <div class="status-row">
-    <span id="lamp" class="lamp"></span>
-    <strong id="status">V9.0 已加载，请先加载中文模型</strong>
-  </div>
-  <div id="modelInfo" class="model-info">
-    V9只运行一个中文模型，避免中英文双模型互相干扰；英文专业术语由本地术语表和语义匹配恢复。
-  </div>
-  <div class="progress"><div id="progressBar"></div></div>
-  <div class="buttons">
-    <button id="loadModel" class="primary">1. 加载中文术语增强模型</button>
-    <button id="start" class="primary" disabled>2. 开始持续监听</button>
-    <button id="stop" class="danger" disabled>停止监听</button>
-    <button id="forceResult" class="secondary" disabled>立即结束本题</button>
-  </div>
+<div class="status-row"><span id="lamp" class="lamp"></span><strong id="status">V10.0 已加载，请选择Whisper模型</strong></div>
+<div class="model-controls">
+<label>识别模型<select id="modelSelect"><option value="onnx-community/whisper-small" selected>Whisper Small 高精度（推荐，下载约250MB）</option><option value="onnx-community/whisper-base">Whisper Base 平衡版（下载约80MB）</option></select></label>
+<label>语言方式<select id="languageSelect"><option value="zh" selected>中文主体，保留英文术语（推荐）</option><option value="auto">自动判断语言</option></select></label>
+</div>
+<div id="modelInfo" class="model-info">V10不再使用Vosk，而是使用成熟的多语言Whisper模型。Small准确率更高，但加载和转写更慢；平板内存不足时改用Base。</div>
+<div class="progress"><div id="progressBar"></div></div><div id="progressText" class="progress-text">模型尚未加载</div>
+<div class="buttons"><button id="loadModel" class="primary">1. 加载Whisper模型</button><button id="start" class="primary" disabled>2. 开始持续监听</button><button id="stop" class="danger" disabled>停止监听</button><button id="forceResult" class="secondary" disabled>立即结束本题</button></div>
 </section>
-
-<section class="card">
-  <h2>麦克风实时状态</h2>
-  <div class="meter"><div id="meterFill"></div></div>
-  <div class="meter-labels"><span>安静</span><span id="levelText">尚未打开麦克风</span><span>声音较大</span></div>
-  <p class="tip">老师说完后保持安静约2.5秒，程序会自动结算问题、纠正专业术语并直接显示答案。</p>
-</section>
-
-<section class="card">
-  <div class="title-row">
-    <h2>识别和语义纠错</h2>
-    <button id="clear" class="text-button">清空</button>
-  </div>
-  <div id="partial" class="partial">等待开始监听……</div>
-
-  <label class="field-label">中文模型识别原文</label>
-  <div id="rawText" class="raw-text">—</div>
-
-  <label class="field-label">专业术语纠正结果</label>
-  <div id="correctedTerms" class="term-box">等待识别专业术语</div>
-
-  <label class="field-label" for="question">语义校正后的标准问题</label>
-  <textarea id="question" placeholder="例如原文把GPGPU识别成“鸡皮鸡皮油”，这里会自动恢复成标准问题。"></textarea>
-
-  <div id="confidence" class="confidence">等待语义匹配</div>
-  <div class="buttons">
-    <button id="manualAnswer" class="secondary">重新按当前文字匹配</button>
-    <button id="manualInput" class="secondary">手动输入问题</button>
-  </div>
-</section>
-
-<section class="card answer-card">
-  <div class="title-row">
-    <h2>建议回答</h2>
-    <button id="copy" class="text-button">复制</button>
-  </div>
-  <div id="matched" class="matched">等待完整问题</div>
-  <div id="keywords" class="keywords">关键词提示会显示在这里</div>
-  <div id="answer" class="answer">老师说完并停顿约2.5秒后，回答会自动出现，不需要点击匹配按钮。</div>
-</section>
-
-<section class="card notice">
-  <strong>V9工作方式：</strong>主要识别中文句子，不再用英文模型识别整段语音。对于GPGPU、AXI、APB、CDC、PTPX等英文术语，通过发音别名、上下文主题和简历问题库自动恢复。
-</section>
+<section class="card"><h2>麦克风与自动断句</h2><div class="meter"><div id="meterFill"></div></div><div class="meter-labels"><span>安静</span><span id="levelText">尚未打开麦克风</span><span>声音较大</span></div><div class="diagnostic-grid"><div><span>环境噪声</span><strong id="noiseText">—</strong></div><div><span>当前阈值</span><strong id="thresholdText">—</strong></div><div><span>待处理问题</span><strong id="queueText">0</strong></div></div><p class="tip">老师说完后保持安静约2.5秒，程序会自动截取完整问题并交给Whisper。Whisper转写需要额外计算时间，Small通常比Base慢。</p></section>
+<section class="card"><div class="title-row"><h2>高精度语音转文字</h2><button id="clear" class="text-button">清空</button></div><div id="diagnostic" class="diagnostic">等待开始监听……</div><label class="field-label">Whisper原始转写</label><div id="rawText" class="raw-text">—</div><label class="field-label">只规范专业术语后的问题</label><textarea id="question" placeholder="这里尽量保留老师原句，只把GPGPU、AXI、APB等明显术语恢复为标准写法。"></textarea><div id="termInfo" class="term-box">等待识别专业术语</div><div class="buttons"><button id="manualAnswer" class="secondary">按当前文字重新匹配答案</button><button id="manualInput" class="secondary">手动输入问题</button></div></section>
+<section class="card answer-card"><div class="title-row"><h2>建议回答</h2><button id="copy" class="text-button">复制</button></div><div id="matched" class="matched">等待完整问题</div><div id="keywords" class="keywords">关键词提示会显示在这里</div><div id="answer" class="answer">老师说完并停顿后，Whisper完成转写，程序会自动匹配并显示回答。</div></section>
+<section class="card notice"><strong>工作方式：</strong>语音在平板浏览器内通过Transformers.js和ONNX Runtime运行Whisper，不调用OpenAI API，也不需要API Key。首次需要从Hugging Face下载模型文件；模型加载后可重复识别。</section>
 </main>
-
 <script>
 window.INTERVIEW_KB=[{"name": "自我介绍", "patterns": ["自我介绍", "介绍一下自己", "简单介绍自己", "说说你自己"], "keywords": "中国科学院大学｜数字IC｜SoC前端｜存储控制器｜50 GHz存储", "answer": "您好，我叫李立娟，目前在中国科学院大学学习集成电路设计与制造。我的研究和实习主要围绕高性能计算、近存计算和数字芯片前端设计展开。实习中，我参与AI存算一体SoC前端设计，做过bank_controller、MC到AXI桥接和APB到自定义SR接口适配，也接触了RTL、CDC、SDC、综合和PTPX功耗分析。科研方面，我完成过16-bit超导动态循环存储器设计与流片验证，实现最高50 GHz稳定运行。我希望从事数字芯片设计、SoC前端或验证相关工作。", "canonicalZh": "请简单介绍一下你自己。", "canonicalEn": "Please introduce yourself briefly.", "enPatterns": ["tell me about yourself", "please introduce yourself", "give me a brief self introduction", "walk me through your background", "can you introduce yourself"], "topicAliases": ["自我介绍", "介绍自己", "学习经历", "个人背景", "tell me about yourself"]}, {"name": "实习工作", "patterns": ["实习做了什么", "介绍实习", "实习工作", "工作内容", "负责什么"], "keywords": "存算一体SoC｜MC后端｜AXI/APB｜CDC｜PTPX", "answer": "我目前参与面向AI计算的存算一体SoC前端设计与集成。主要工作包括MC后端bank_controller、多bank接口到AXI4 Master的mc2axi桥接，以及APB到srtop自定义SR接口的apb2srtop适配。同时我也接触Lint、SDC、综合网表、UPF和PTPX功耗分析。我的工作重点是存储访问控制、接口协议转换、跨时钟域处理以及系统集成问题定位。", "canonicalZh": "请介绍一下你的实习工作和主要职责。", "canonicalEn": "Please describe your internship and main responsibilities.", "enPatterns": ["tell me about your internship", "what did you do during your internship", "what were your main responsibilities", "describe your internship experience"], "topicAliases": ["实习", "工作内容", "主要职责", "公司项目", "internship"]}, {"name": "存算一体SoC架构", "patterns": ["soc架构", "存算一体架构", "系统架构", "riscv noc", "npu dram", "八个npu"], "keywords": "RISC-V｜NoC｜8个NPU Bank｜MC｜PIM_ECC｜DRAM DIE", "answer": "这个存算一体SoC采用RISC-V负责系统控制，NoC负责片上数据传输，8个NPU Bank并行完成计算。NPU Bank通过NIU接入NoC，请求经过AXI汇聚后进入Memory Controller，再通过PIM_ECC访问DRAM DIE。核心目标是缩短NPU与存储之间的数据路径，降低数据搬运带来的带宽、延迟和功耗开销。我的工作主要位于MC后端和配置通路，包括bank控制、MC到AXI适配以及APB到自定义接口转换。", "canonicalZh": "请介绍一下存算一体SoC的整体架构。", "canonicalEn": "Please explain the architecture of your compute in memory SoC.", "enPatterns": ["explain your compute in memory soc architecture", "describe the overall soc architecture", "risc v noc npu dram architecture", "how is your soc organized"], "topicAliases": ["存算一体", "soc架构", "系统架构", "riscv", "risc v", "noc", "npu", "dram"]}, {"name": "bank_controller", "patterns": ["bank controller", "bank控制器", "班克控制器", "mc后端", "多bank控制"], "keywords": "bank选择｜地址生成｜ACT｜读写调度｜RMW｜PIM", "answer": "bank_controller位于Memory Controller后端，负责把上层请求转换成底层memory bank能够执行的控制时序。它完成bank选择、地址生成、ACT控制、读写调度、写数据组织和读返回管理。部分写时采用RMW，先读取旧数据，再替换目标字段并组成完整256-bit数据写回，避免覆盖未修改部分。同时保留PIM相关控制路径，使普通读写、部分写和PIM访问能够在同一框架中协同工作。", "canonicalZh": "请介绍一下bank_controller的功能和设计方法。", "canonicalEn": "Please explain the function and design of the bank controller.", "enPatterns": ["explain your bank controller", "how did you design the bank controller", "what does the bank controller do", "bank controller architecture", "memory bank controller"], "topicAliases": ["bank controller", "bank控制器", "班克控制器", "板块控制器", "存储bank", "mc后端"]}, {"name": "RMW", "patterns": ["rmw", "读改写", "部分写", "局部写", "先读再写"], "keywords": "读取旧数据｜字段替换｜256-bit｜write-back｜原子性", "answer": "RMW就是Read-Modify-Write，主要用于部分写。底层一次写回可能要求完整256-bit数据，但上层只修改其中一部分，因此控制器先读取目标地址旧数据，根据写掩码替换需要更新的字段，再组合成完整数据写回。这样可以保护未修改内容。难点是保证读、合并和写回过程不被冲突请求破坏。", "canonicalZh": "请解释一下RMW读改写的原理和设计难点。", "canonicalEn": "Please explain read modify write and its design challenges.", "enPatterns": ["explain read modify write", "what is rmw", "how do you implement partial write", "read modify write design", "why do you read before writing"], "topicAliases": ["rmw", "read modify write", "read modified write", "读改写", "部分写", "局部写"]}, {"name": "mc2axi", "patterns": ["mc to axi", "mc到axi", "mc2axi", "mc二axi", "axi桥接", "dfi转axi"], "keywords": "AXI4五通道｜command｜仲裁｜异步FIFO｜CDC｜地址映射", "answer": "mc2axi把MC侧多bank访存接口转换成标准AXI4 Master事务。MC侧先捕获各bank请求，把地址、读写类型和数据整理成command；多个请求经过仲裁后，通过异步FIFO跨到AXI时钟域；AXI侧再生成AW、W、B、AR、R五通道握手。设计重点是跨时钟域数据一致性、通道解耦、返回与原请求的对应，以及full-bank和half-bank地址映射。", "canonicalZh": "请介绍一下mc2axi桥接模块的设计。", "canonicalEn": "Please explain your MC to AXI bridge design.", "enPatterns": ["explain the mc to axi bridge", "how does mc2axi work", "memory controller to axi bridge", "how did you convert dfi to axi", "describe your axi bridge"], "topicAliases": ["mc2axi", "mc to axi", "mc到axi", "axi桥接", "dfi转axi", "memory controller to axi"]}, {"name": "AXI五通道", "patterns": ["axi五通道", "五个通道", "aw w b ar r", "axi通道"], "keywords": "AW｜W｜B｜AR｜R｜VALID/READY", "answer": "AXI4的写地址通过AW通道传输，写数据通过W通道传输，写响应通过B通道返回；读地址通过AR通道传输，读数据和响应通过R通道返回。每个通道都通过VALID和READY握手，只有两者同拍为1时才完成传输。通道解耦提高了并行度，但设计时必须处理地址、数据和响应的对应关系以及背压。", "canonicalZh": "请介绍一下AXI的五个通道和握手机制。", "canonicalEn": "Please explain the five AXI channels and the handshake mechanism.", "enPatterns": ["explain the five axi channels", "what are aw w b ar and r", "how does axi handshake work", "axi valid ready handshake"], "topicAliases": ["axi五通道", "aw", "w通道", "b通道", "ar", "r通道", "valid ready"]}, {"name": "AXI与APB", "patterns": ["axi和apb", "apb和axi", "为什么用apb", "为什么用axi", "总线区别"], "keywords": "AXI高带宽｜多通道｜突发｜APB简单｜寄存器配置", "answer": "AXI面向高带宽数据传输，读写通道独立，支持VALID/READY握手和突发传输，适合NPU、MC和存储数据通路。APB结构简单，适合低速寄存器配置和状态读取。在我的项目中，MC到FPGA memory的数据访问使用AXI，而外部对srtop的控制和状态访问使用APB。", "canonicalZh": "AXI和APB有什么区别，分别适用于什么场景？", "canonicalEn": "What is the difference between AXI and APB?", "enPatterns": ["difference between axi and apb", "compare axi with apb", "when do you use axi and when do you use apb", "why use axi", "why use apb"], "topicAliases": ["axi和apb", "apb和axi", "总线区别", "axi apb"]}, {"name": "apb2srtop", "patterns": ["apb to srtop", "apb到srtop", "apb2srtop", "sr接口", "apb桥接"], "keywords": "命令缓存｜pending队列｜CDC握手｜SR状态机｜时序脉冲", "answer": "apb2srtop把外部标准APB访问转换成srtop自定义SR接口时序。APB侧接收命令并准备160-bit写数据，命令经过缓存、1深度pending队列和CDC握手进入sr_clk域，再由状态机产生write setup、enable、hold、read delay和cooldown等控制时序。同时支持busy、done、error和queue_full等状态查询。", "canonicalZh": "请介绍一下apb2srtop桥接模块的设计。", "canonicalEn": "Please explain your APB to SR top bridge.", "enPatterns": ["explain apb to sr top", "how does apb2srtop work", "describe your apb bridge", "how do you convert apb to the custom sr interface"], "topicAliases": ["apb2srtop", "apb to sr top", "apb到srtop", "sr接口", "apb桥接"]}, {"name": "CDC", "patterns": ["cdc", "跨时钟域", "异步fifo", "亚稳态", "格雷码"], "keywords": "两级同步｜握手｜异步FIFO｜Gray码｜多比特一致性", "answer": "CDC要解决亚稳态和多比特数据不一致。单比特电平可以用两级触发器同步，脉冲可以用请求应答握手，多比特连续数据通常使用异步FIFO。我的mc2axi中使用异步FIFO传递command，apb2srtop中使用命令锁存加握手。设计时还要处理复位、空满判断和数据不能在握手完成前变化。", "canonicalZh": "请解释一下CDC跨时钟域问题及常用解决方法。", "canonicalEn": "Please explain clock domain crossing and common solutions.", "enPatterns": ["explain clock domain crossing", "what is cdc", "how do you handle metastability", "asynchronous fifo", "two flip flop synchronizer", "gray code pointer"], "topicAliases": ["cdc", "clock domain crossing", "跨时钟域", "异步fifo", "async fifo", "gray code", "亚稳态"]}, {"name": "ready/valid握手", "patterns": ["ready valid", "valid ready", "握手协议", "背压"], "keywords": "VALID｜READY｜同拍为1｜数据稳定｜背压", "answer": "发送方在数据有效时拉高VALID，并在握手完成前保持数据稳定；接收方能够接收时拉高READY。只有VALID和READY同拍为1时，这笔数据才真正传输完成。接收方可以通过拉低READY施加背压，发送方不能在未握手时撤销已经声明有效的数据。", "canonicalZh": "请解释一下ready/valid握手机制。", "canonicalEn": "Please explain the ready valid handshake.", "enPatterns": ["explain ready valid handshake", "when is a transfer completed", "what is back pressure", "valid ready protocol"], "topicAliases": ["ready valid", "valid ready", "握手", "back pressure", "背压"]}, {"name": "GPGPU架构", "patterns": ["gpgpu", "gpu架构", "compute core", "dispatcher", "并行架构"], "keywords": "Host｜Dispatcher｜4个Compute Core｜Cache｜Global Memory", "answer": "这个项目是面向矩阵计算的简化GPGPU架构，包括Host配置、CTA Scheduler或Dispatcher、4个Compute Core、Cache、程序与数据存储控制器和Global Memory。Dispatcher根据thread_count、core_id、block_id和thread_id分配任务，每个核心内部完成取指、译码、寄存器读取、运算、访存和写回。项目通过RTL仿真验证8-thread矩阵加法和矩阵乘法。", "canonicalZh": "请介绍一下你设计的GPGPU整体架构。", "canonicalEn": "Please explain the architecture of your GPGPU.", "enPatterns": ["explain your gpgpu architecture", "describe the gpu architecture", "what are the dispatcher and compute cores", "how does your parallel processor work"], "topicAliases": ["gpgpu", "general purpose gpu", "gpu架构", "dispatcher", "compute core", "并行架构"]}, {"name": "Compute Core", "patterns": ["compute core怎么设计", "计算核心", "执行核心", "pc取指译码"], "keywords": "PC｜Fetcher｜Decoder｜Register File｜ALU｜LSU｜写回", "answer": "每个Compute Core可以看成一个简化处理器。PC提供指令地址，Fetcher取出16-bit指令，Decoder解析opcode、寄存器索引和立即数，Register File提供操作数，ALU或Multiplier完成运算，LSU负责数据读写，最后把结果写回寄存器堆。控制状态机协调取指、译码、执行、访存和写回各阶段。", "canonicalZh": "请介绍一下Compute Core内部是如何设计的。", "canonicalEn": "Please explain the internal design of the compute core.", "enPatterns": ["explain the compute core", "what is inside a compute core", "program counter fetch decoder register file alu lsu", "how does the execution core work"], "topicAliases": ["compute core", "计算核心", "执行核心", "fetch decoder", "alu lsu"]}, {"name": "指令与寄存器", "patterns": ["指令格式", "十六位指令", "16bit指令", "寄存器堆", "四位寄存器索引", "opcode"], "keywords": "16-bit｜4-bit opcode｜4-bit索引｜8-bit immediate｜16个寄存器", "answer": "项目采用16-bit指令格式，包括4-bit opcode、4-bit寄存器索引和8-bit immediate，支持NOP、BRnzp、CMP、ADD、SUB、MUL、DIV、LDR、STR、CONST和RET等指令。4-bit寄存器索引最多可寻址16个寄存器，寄存器堆通常采用组合读和时钟沿同步写。", "canonicalZh": "请介绍一下16-bit指令格式和寄存器堆设计。", "canonicalEn": "Please explain the sixteen bit instruction format and register file.", "enPatterns": ["explain the instruction format", "sixteen bit instruction", "four bit opcode", "register file design", "how many registers", "four bit register index"], "topicAliases": ["指令格式", "16 bit", "sixteen bit", "opcode", "register file", "寄存器堆", "immediate"]}, {"name": "超导动态循环存储器", "patterns": ["超导存储器", "循环存储器", "五十g", "50ghz", "闭合环路", "比特流存储"], "keywords": "16-bit闭合环路｜SFQ比特流｜动态循环｜50 GHz｜流片验证", "answer": "我的科研工作聚焦超导比特流动态循环存储器。存储单元首尾相连形成闭合环路，让多位SFQ脉冲在环路中持续循环，实现动态保持。我完成了16-bit芯片设计和流片验证，最高可在50 GHz下连续稳定读出。核心难点是环路总延时、控制脉冲时序和版图互连必须严格匹配。", "canonicalZh": "请介绍一下你的超导动态循环存储器。", "canonicalEn": "Please explain your superconducting dynamic recirculating memory.", "enPatterns": ["explain your superconducting memory", "dynamic recirculating memory", "bit stream memory", "fifty gigahertz memory", "closed loop memory", "sfq memory"], "topicAliases": ["超导存储器", "dynamic recirculating memory", "bit stream memory", "sfq", "50 ghz", "闭合环路"]}, {"name": "一维时钟寻址", "patterns": ["一维时钟寻址", "时间寻址", "模n计数器", "按序读出", "ndro"], "keywords": "全局时钟｜模N计数器｜时间位置｜首位对齐｜NDRO", "answer": "一维时钟寻址把数据在环路中的位置映射成时间位置。全局时钟驱动模N计数器，计数值表示当前经过读出口的是第几位数据；到目标位置时打开NDRO门控输出。读出前需要完成首位对齐，使计数器第0位和环路首位数据对应，从而实现连续按序读出。", "canonicalZh": "请解释一下一维时钟寻址和按序读出方法。", "canonicalEn": "Please explain one dimensional temporal addressing and ordered readout.", "enPatterns": ["explain temporal addressing", "one dimensional clock addressing", "modulo n counter", "ordered readout", "ndro readout", "how do you align the first bit"], "topicAliases": ["一维时钟寻址", "temporal addressing", "modulo n", "ndro", "按序读出", "首位对齐"]}, {"name": "PTPX", "patterns": ["ptpx", "功耗分析", "primetime px", "动态功耗", "泄漏功耗"], "keywords": "综合网表｜库｜SDC｜UPF｜波形活动｜层次功耗", "answer": "PTPX是基于PrimeTime的功耗分析工具，输入通常包括综合网表、标准单元库、SDC、UPF以及FSDB或VCD波形活动。工具计算内部功耗、开关功耗和泄漏功耗，并可按层次或电源域输出结果。实际工作中关键是保证网表、UPF、SDC和波形层次正确匹配。", "canonicalZh": "请介绍一下PTPX功耗分析的输入、流程和输出。", "canonicalEn": "Please explain the PrimeTime PX power analysis flow.", "enPatterns": ["explain prime time px", "ptpx power analysis", "what are the inputs of power analysis", "dynamic power leakage power", "fsdb sdc upf netlist"], "topicAliases": ["ptpx", "primetime px", "prime time px", "功耗分析", "fsdb", "leakage power", "dynamic power"]}, {"name": "SDC与UPF", "patterns": ["sdc", "upf", "电源域", "时序约束", "隔离单元"], "keywords": "时钟约束｜输入输出延时｜电源域｜隔离｜电源状态", "answer": "SDC描述时序环境，包括时钟、输入输出延时、驱动负载和时序例外，用于指导综合和静态时序分析。UPF描述电源域、供电网络、隔离、电平转换、保持和电源状态。两者都要求对象名称与当前网表一致，否则会出现时钟路径、端口或电源连接找不到的问题。", "canonicalZh": "请解释一下SDC和UPF分别是什么。", "canonicalEn": "Please explain SDC and UPF.", "enPatterns": ["what are sdc and upf", "explain timing constraints", "explain power intent", "power domain isolation level shifter", "create clock input delay output delay"], "topicAliases": ["sdc", "upf", "timing constraint", "power intent", "电源域", "隔离", "level shifter"]}, {"name": "形式验证", "patterns": ["形式验证", "rtl到网表", "等价性验证", "compare point", "对比点"], "keywords": "参考设计｜实现设计｜逻辑等价｜compare point｜综合变换", "answer": "RTL到网表形式验证用于证明综合网表与RTL逻辑等价。工具分别读取reference和implementation，建立寄存器和输出等compare point，再通过数学方法逐一证明。出现unmatched或failing point时，先检查版本、层次、参数、黑盒、时钟复位和UPF处理是否一致。", "canonicalZh": "请介绍一下RTL到网表的形式等价性验证。", "canonicalEn": "Please explain RTL to netlist formal equivalence verification.", "enPatterns": ["explain formal verification", "rtl to netlist equivalence", "what is a compare point", "reference and implementation", "unmatched and failing points"], "topicAliases": ["形式验证", "formal verification", "rtl to netlist", "compare point", "equivalence"]}, {"name": "项目难点", "patterns": ["最大困难", "项目难点", "遇到什么问题", "怎么解决困难", "最有挑战"], "keywords": "接口理解｜CDC｜时序｜版本匹配｜日志与波形", "answer": "我遇到的主要难点是跨模块接口、CDC、时序和工程版本同时耦合。例如mc2axi同时涉及多bank仲裁、异步FIFO和AXI五通道，apb2srtop既要跨时钟传命令，又要满足SR接口时序。我的处理方式是先画清楚数据流和状态机，再拆成单模块、单时钟域和单事务验证，结合日志与波形逐级定位，最后回到系统集成。", "canonicalZh": "项目中遇到的最大困难是什么，你是如何解决的？", "canonicalEn": "What was the biggest challenge in your project and how did you solve it?", "enPatterns": ["what was your biggest challenge", "describe a difficult problem", "how did you solve the problem", "most challenging part of the project"], "topicAliases": ["最大困难", "项目难点", "挑战", "怎么解决", "problem solving"]}, {"name": "职业规划", "patterns": ["职业规划", "未来规划", "为什么做数字ic", "发展方向"], "keywords": "数字IC｜SoC前端｜存储与互联｜独立负责模块", "answer": "我的职业方向是数字芯片设计和SoC前端。近期希望把RTL、总线协议、CDC、验证和时序约束做扎实，能够独立负责一个IP从需求到验证交付。中期希望继续深耕存储控制器、片上互联和高性能数据通路，逐步提升到系统架构和性能优化。", "canonicalZh": "请介绍一下你的职业规划。", "canonicalEn": "What is your career plan?", "enPatterns": ["what is your career plan", "where do you see yourself in three years", "why digital ic design", "what is your future plan", "career development"], "topicAliases": ["职业规划", "未来规划", "career plan", "为什么数字ic"]}];
 window.TERM_GROUPS=[{"term": "GPGPU", "aliases": ["g p g p u", "gpgpu", "gpu", "general purpose gpu", "鸡皮鸡皮油", "机皮机皮优", "吉皮吉皮优", "基皮基皮优", "鸡皮油", "机皮优", "通用gpu", "通用图形处理器", "图形处理器架构"]}, {"term": "AXI", "aliases": ["a x i", "axi", "艾克西", "爱克西", "埃克西", "阿克西", "艾克赛", "爱克赛", "阿西", "高级可扩展接口"]}, {"term": "APB", "aliases": ["a p b", "apb", "艾皮比", "爱皮比", "阿皮比", "a皮b", "外围总线"]}, {"term": "PTPX", "aliases": ["p t p x", "ptpx", "皮提皮艾克斯", "皮提皮叉", "批提批艾克斯", "primetime px", "prime time px", "普莱姆time px", "功耗分析工具"]}, {"term": "CDC", "aliases": ["c d c", "cdc", "西迪西", "时钟域交叉", "跨时钟域", "clock domain crossing"]}, {"term": "FIFO", "aliases": ["f i f o", "fifo", "非否", "飞否", "菲佛", "先进先出", "异步fifo", "async fifo"]}, {"term": "RMW", "aliases": ["r m w", "rmw", "read modify write", "read modified write", "读改写", "读修改写"]}, {"term": "SDC", "aliases": ["s d c", "sdc", "艾斯迪西", "时序约束", "synopsys design constraints"]}, {"term": "UPF", "aliases": ["u p f", "upf", "优皮艾夫", "统一电源格式", "电源意图"]}, {"term": "FSDB", "aliases": ["f s d b", "fsdb", "艾夫艾斯迪比", "波形文件"]}, {"term": "RTL", "aliases": ["r t l", "rtl", "寄存器传输级", "艾尔提艾尔"]}, {"term": "NPU", "aliases": ["n p u", "npu", "恩皮优", "神经网络处理器"]}, {"term": "NoC", "aliases": ["n o c", "noc", "恩欧西", "片上网络", "network on chip"]}, {"term": "RISC-V", "aliases": ["risc v", "risc-v", "risk five", "瑞斯克五", "精简指令集"]}, {"term": "DRAM", "aliases": ["d r a m", "dram", "迪ram", "动态随机存储器"]}, {"term": "DFI", "aliases": ["d f i", "dfi", "迪艾夫艾", "dram phy interface"]}, {"term": "PIM", "aliases": ["p i m", "pim", "皮艾艾姆", "存内计算", "processing in memory"]}, {"term": "ECC", "aliases": ["e c c", "ecc", "易西西", "纠错码", "error correction code"]}, {"term": "SFQ", "aliases": ["s f q", "sfq", "艾斯艾夫Q", "单磁通量子", "single flux quantum"]}, {"term": "NDRO", "aliases": ["n d r o", "ndro", "恩迪阿欧", "non destructive readout"]}, {"term": "Gray code", "aliases": ["gray code", "grey code", "格雷码", "葛雷码", "灰码"]}, {"term": "ready/valid", "aliases": ["ready valid", "valid ready", "ready and valid", "瑞迪valid", "握手信号"]}, {"term": "bank_controller", "aliases": ["bank controller", "bank_controller", "班克控制器", "板块控制器", "班控制器"]}, {"term": "mc2axi", "aliases": ["mc2axi", "mc to axi", "mc二axi", "mc到axi", "memory controller to axi"]}, {"term": "apb2srtop", "aliases": ["apb2srtop", "apb to sr top", "apb到sr top", "apb到srtop"]}, {"term": "Compute Core", "aliases": ["compute core", "computer core", "计算核心", "运算核心", "执行核心"]}, {"term": "Dispatcher", "aliases": ["dispatcher", "dispatch", "调度器", "任务分发器"]}, {"term": "Formal Verification", "aliases": ["formal verification", "形式验证", "form verification", "等价性验证"]}, {"term": "Compare Point", "aliases": ["compare point", "compare points", "对比点", "比较点"]}];
-window.APP_BUILD="V9.0.0";
-(async function purgeOldInterviewCache() {
-  try {
-    if ("serviceWorker" in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(reg => reg.unregister()));
-    }
-    if ("caches" in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map(key => caches.delete(key)));
-    }
-  } catch (error) {
-    console.warn("V9 cache cleanup skipped", error);
-  }
-})();
+window.APP_BUILD="V10.0.0";
+(async function removeOldAppCaches(){try{if("serviceWorker" in navigator){const registrations=await navigator.serviceWorker.getRegistrations();await Promise.all(registrations.map(registration=>registration.unregister()));}if("caches" in window){const keys=await caches.keys();const oldKeys=keys.filter(key=>key.startsWith("matepad-vosk-interview")||key.startsWith("interview-no-api")||key.startsWith("interview-helper-no-api"));await Promise.all(oldKeys.map(key=>caches.delete(key)));}}catch(error){console.warn("旧版缓存清理失败",error);}})();
 </script>
-<script src="app-v9.js?v=9.0.0"></script>
-</body>
-</html>
+<script src="app-v10.js?v=10.0.0"></script>
+</body></html>
